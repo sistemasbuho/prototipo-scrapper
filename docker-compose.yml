@@ -4,17 +4,17 @@ services:
  
   Scraper:
     image: buho/scraper
-    command: 'python3 app.py 0.0.0.0:5000'
+    command: 'gunicorn -w 4 -b 0.0.0.0:8000 app:app'
     volumes:
       - .:/prototipo-scrapper
     environment:
-      VIRTUAL_HOST: 'prototipo_scraper.buho.media'
+      VIRTUAL_HOST: 'prototipo-scraper.buho.media'
       C_FORCE_ROOT: 1
       LC_ALL: 'C.UTF-8'
       LANG: 'C.UTF-8'
       TZ: 'America/Bogota'
-      VIRTUAL_PORT: '5000'
-      LETSENCRYPT_HOST: 'prototipo_scraper.buho.media'
+      VIRTUAL_PORT: '5050'
+      LETSENCRYPT_HOST: 'prototipo-scraper.buho.media'
       LETSENCRYPT_EMAIL: 'sistemas@buho.media'
     networks:
         - default
