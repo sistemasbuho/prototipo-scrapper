@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
+urls.xlsx
+scrapers.xlsx
 # C extensions
 *.so
 
