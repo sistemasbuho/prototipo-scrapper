@@ -1,9 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 import openpyxl
 import requests
+from celery import Celery
 import os
 
 app = Flask(__name__)
+
+
+# Configuración de Celery
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
 
 def limpieza(response):
     response = response.json()
@@ -38,6 +46,30 @@ def txtfly(url):
     data_limpia = limpieza(data)
     return data_limpia
 
+@celery.task
+def scrape_task(urls):
+    lista_scraper = []
+    for url in urls:
+        lista_scraper.append(txtfly(url))
+            # Crear un nuevo archivo Excel con los resultados
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+
+    columnas = list(lista_scraper[0].keys())
+    for col_idx, columna in enumerate(columnas, start=1):
+        sheet.cell(row=1, column=col_idx, value=columna)
+
+    for row_idx, objeto in enumerate(lista_scraper, start=2):
+        for col_idx, columna in enumerate(columnas, start=1):
+            sheet.cell(row=row_idx, column=col_idx, value=objeto[columna])
+
+    # Guardar el archivo con los resultados
+    workbook.save("scrapers.xlsx")
+
+    return redirect(url_for('download', filename='scrapers.xlsx'))
+    # return lista_scraper
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -61,30 +93,16 @@ def scrape():
         sheet = workbook.active
         urls = [cell.value for cell in sheet['A']]
 
-        lista_scraper = []
-        for url in urls:
-            lista_scraper.append(txtfly(url))
+        # Lanzar la tarea Celery en segundo plano
+        task = scrape_task.apply_async(args=(urls,))
 
-        # Crear un nuevo archivo Excel con los resultados
-        workbook = openpyxl.Workbook()
-        sheet = workbook.active
+        return "La tarea de scraping se está ejecutando en segundo plano. Puede tomar un tiempo."
 
-        columnas = list(lista_scraper[0].keys())
-        for col_idx, columna in enumerate(columnas, start=1):
-            sheet.cell(row=1, column=col_idx, value=columna)
 
-        for row_idx, objeto in enumerate(lista_scraper, start=2):
-            for col_idx, columna in enumerate(columnas, start=1):
-                sheet.cell(row=row_idx, column=col_idx, value=objeto[columna])
-
-        # Guardar el archivo con los resultados
-        workbook.save("scrapers.xlsx")
-
-        return redirect(url_for('download', filename='scrapers.xlsx'))
 
 @app.route('/download/<filename>')
 def download(filename):
-    directory = os.getcwd()  # Obtiene el directorio actual
+    directory = os.getcwd()
     return send_from_directory(directory, filename)
 
 if __name__ == '__main__':
