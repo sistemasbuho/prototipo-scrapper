@@ -11,7 +11,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update
 
 # Install required packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qq install -y -u python3 xorg xvfb dbus-x11 imagemagick xfonts-100dpi xfonts-75dpi xfonts-cyrillic curl ghostscript firefox xvfb dpkg openssh-server wget libpq-dev python3-dev python3-setuptools git-core python3-pip build-essential nano python3-psycopg2 libpangocairo-1.0-0
-
+# Instalar redis
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update
 
 

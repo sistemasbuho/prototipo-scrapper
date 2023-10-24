@@ -3,13 +3,16 @@ import openpyxl
 import requests
 from celery import Celery
 import os
+import time
+import logging
 
+logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 
 # Configuración de Celery
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://prototipo-scrapper_redis_1:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://prototipo-scrapper_redis_1:6379/0'
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
@@ -39,8 +42,7 @@ def txtfly(url):
     }
     headers = {
         "content-type": "application/x-www-form-urlencoded",
-        "X-RapidAPI-Key": "57b21f0580msha9486981b9f1776p19b5bdjsn45ac803f42e5",
-        "X-RapidAPI-Host": "full-text-rss.p.rapidapi.com"
+        "X-RapidAPI-Key": "6fd32a4cc6mshb266cfc4f75cd1dp12d4d1jsnd5bc578c4926",
     }
     data = requests.post(api, data=payload, headers=headers)
     data_limpia = limpieza(data)
@@ -48,26 +50,28 @@ def txtfly(url):
 
 @celery.task
 def scrape_task(urls):
-    lista_scraper = []
-    for url in urls:
-        lista_scraper.append(txtfly(url))
-            # Crear un nuevo archivo Excel con los resultados
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
+    logger.info("Inicio de la tarea")
+    time.sleep(10)
+    logger.info("Fin de la tarea")
+    # lista_scraper = []
+    # for url in urls:
+    #     lista_scraper.append(txtfly(url))
+    #         # Crear un nuevo archivo Excel con los resultados
+    # workbook = openpyxl.Workbook()
+    # sheet = workbook.active
 
-    columnas = list(lista_scraper[0].keys())
-    for col_idx, columna in enumerate(columnas, start=1):
-        sheet.cell(row=1, column=col_idx, value=columna)
+    # columnas = list(lista_scraper[0].keys())
+    # for col_idx, columna in enumerate(columnas, start=1):
+    #     sheet.cell(row=1, column=col_idx, value=columna)
 
-    for row_idx, objeto in enumerate(lista_scraper, start=2):
-        for col_idx, columna in enumerate(columnas, start=1):
-            sheet.cell(row=row_idx, column=col_idx, value=objeto[columna])
+    # for row_idx, objeto in enumerate(lista_scraper, start=2):
+    #     for col_idx, columna in enumerate(columnas, start=1):
+    #         sheet.cell(row=row_idx, column=col_idx, value=objeto[columna])
 
-    # Guardar el archivo con los resultados
-    workbook.save("scrapers.xlsx")
+    # # Guardar el archivo con los resultados
+    # workbook.save("scrapers.xlsx")
 
-    return redirect(url_for('download', filename='scrapers.xlsx'))
-    # return lista_scraper
+    #return redirect(url_for('download', filename='scrapers.xlsx'))
 
 
 @app.route('/')
@@ -94,6 +98,7 @@ def scrape():
         urls = [cell.value for cell in sheet['A']]
 
         # Lanzar la tarea Celery en segundo plano
+        print("ANTES DE ENTRAR A LA TAREA")
         task = scrape_task.apply_async(args=(urls,))
 
         return "La tarea de scraping se está ejecutando en segundo plano. Puede tomar un tiempo."
