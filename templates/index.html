@@ -2,12 +2,89 @@
 <html>
 <head>
     <title>Web Scraping Interface</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #scrapeForm {
+            margin: 20px;
+        }
+
+        #progressMessage {
+            margin: 20px;
+        }
+    </style>
+    
 </head>
 <body>
     <h1>Web Scraping Interface</h1>
-    <form action="/scrape" method="POST" enctype="multipart/form-data">
+    <form id="scrapeForm" enctype="multipart/form-data">
         <input type="file" name="file" accept=".xlsx">
-        <input type="submit" value="Scrape URLs">
+        <input type="button" value="Scrape URLs" onclick="submitScrapeForm()">
     </form>
+    <div id="progressMessage"></div>
+
+    <a id="downloadLink" href="/download_scraper" download="scrapers.xlsx">
+        <button id="downloadButton" disabled>Descargar scraper.xlsx</button>
+    </a>
+
+    <script>
+        function checkFileExistence() {
+            fetch('/check_scraper_existence')
+                .then(response => response.json())
+                .then(data => {
+                    const downloadButton = document.getElementById('downloadButton');
+                    if (data.exists) {
+                        // Habilitar el botón si el archivo existe
+                        downloadButton.removeAttribute('disabled');
+                    } else {
+                        // Deshabilitar el botón si el archivo no existe
+                        downloadButton.setAttribute('disabled', 'disabled');
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+    
+        // Comprobar si el archivo "scraper.xlsx" existe inicialmente
+        checkFileExistence();
+    
+        // Comprobar cada 10 segundos
+        setInterval(checkFileExistence, 1000); // 1000 milisegundos = 1 segundo
+    </script>
+<script>
+    function submitScrapeForm() {
+        var formData = new FormData($('#scrapeForm')[0]);
+    
+        $.ajax({
+            type: 'POST',
+            url: '/scrape',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                alert(data.message);
+                // Restablecer los valores del formulario
+                $('#scrapeForm')[0].reset();
+                // Puedes manejar la respuesta de la acción de raspado si es necesario
+            },
+            error: function(err) {
+                alert("Ocurrió un error al realizar la acción de scraping.");
+            }
+        });
+    }
+</script>
 </body>
 </html>

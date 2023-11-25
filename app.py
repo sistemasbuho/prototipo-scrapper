@@ -1,20 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, current_app, jsonify
 import openpyxl
 import requests
+import logging
 from celery import Celery
 import os
 import time
-import logging
 
-logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
+logger = logging.getLogger(__name__)
 
 # Configuración de Celery
 app.config['CELERY_BROKER_URL'] = 'redis://prototipo-scrapper_redis_1:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://prototipo-scrapper_redis_1:6379/0'
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+
+# Configura SERVER_NAME para que coincida con la forma en que se ejecuta tu aplicación
+app.config['SERVER_NAME'] = 'pruebas-scraper.buho.media'  # Ajusta el puerto según tu configuración
+
+
 celery.conf.update(app.config)
+
+def unir_descripcion_content(response:dict):
+    response["content"] = f"{response['og_description']}\n\n{response['content']}"
+    return response
+
 
 def limpieza(response):
     response = response.json()
@@ -29,6 +39,15 @@ def limpieza(response):
     del response["twitter_title"]
     del response["twitter_description"]
     del response["twitter_card"]
+
+    del response["title"]
+    del response["excerpt"]
+    del response["date"]
+    del response["author"]
+    del response["language"]
+    del response["og_title"]
+    response = unir_descripcion_content(response)
+    del response["og_description"]
     return response
 
 def txtfly(url):
@@ -50,28 +69,26 @@ def txtfly(url):
 
 @celery.task
 def scrape_task(urls):
-    logger.info("Inicio de la tarea")
-    time.sleep(10)
-    logger.info("Fin de la tarea")
-    # lista_scraper = []
-    # for url in urls:
-    #     lista_scraper.append(txtfly(url))
-    #         # Crear un nuevo archivo Excel con los resultados
-    # workbook = openpyxl.Workbook()
-    # sheet = workbook.active
+    # logger.info("Entro a la tarea#10")
+    lista_scraper = []
+    for url in urls:
+        lista_scraper.append(txtfly(url))
 
-    # columnas = list(lista_scraper[0].keys())
-    # for col_idx, columna in enumerate(columnas, start=1):
-    #     sheet.cell(row=1, column=col_idx, value=columna)
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
 
-    # for row_idx, objeto in enumerate(lista_scraper, start=2):
-    #     for col_idx, columna in enumerate(columnas, start=1):
-    #         sheet.cell(row=row_idx, column=col_idx, value=objeto[columna])
+    columnas = list(lista_scraper[0].keys())
+    for col_idx, columna in enumerate(columnas, start=1):
+        sheet.cell(row=1, column=col_idx, value=columna)
 
-    # # Guardar el archivo con los resultados
-    # workbook.save("scrapers.xlsx")
+    for row_idx, objeto in enumerate(lista_scraper, start=2):
+        for col_idx, columna in enumerate(columnas, start=1):
+            sheet.cell(row=row_idx, column=col_idx, value=objeto[columna])
+    # Guardar el archivo con los resultados
+    filename = "scrapers.xlsx"
+    workbook.save(filename)
 
-    #return redirect(url_for('download', filename='scrapers.xlsx'))
+    return filename  # Retorna el nombre del archivo
 
 
 @app.route('/')
@@ -81,15 +98,14 @@ def index():
 @app.route('/scrape', methods=['POST'])
 def scrape():
     if 'file' not in request.files:
-        return redirect(request.url)
+        return jsonify({'message': 'No se ha proporcionado un archivo para el scraper'})
 
     file = request.files['file']
 
     if file.filename == '':
-        return redirect(request.url)
+        return jsonify({'message': 'Nombre de archivo vacío'})
 
     if file:
-        # Guardar el archivo Excel con las URLs en el servidor
         file.save('urls.xlsx')
 
         # Leer las URLs desde el archivo Excel
@@ -97,18 +113,29 @@ def scrape():
         sheet = workbook.active
         urls = [cell.value for cell in sheet['A']]
 
-        # Lanzar la tarea Celery en segundo plano
-        print("ANTES DE ENTRAR A LA TAREA")
-        task = scrape_task.apply_async(args=(urls,))
+        scrape_task.apply_async(args=(urls,))
+        return jsonify({'message': 'La tarea de raspado se está ejecutando en segundo plano. Puede tomar un tiempo.'})
 
-        return "La tarea de scraping se está ejecutando en segundo plano. Puede tomar un tiempo."
+# Ruta para verificar la existencia del archivo "scraper.xlsx"
+@app.route('/check_scraper_existence')
+def check_scraper_existence():
+    scraper_exists = os.path.exists('scrapers.xlsx')
+    return jsonify({'exists': scraper_exists})
 
 
-
-@app.route('/download/<filename>')
-def download(filename):
+@app.route('/download_scraper')
+def download_scraper():
     directory = os.getcwd()
-    return send_from_directory(directory, filename)
+    filename = "scrapers.xlsx"
+
+    try:
+        file_path = os.path.join(directory, filename)
+        if os.path.exists(file_path):
+            return send_from_directory(directory, filename, as_attachment=True)
+    finally:
+        file_path = os.path.join(directory, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5050)
