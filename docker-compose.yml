@@ -2,52 +2,23 @@ version: '3'
 
 services:
 
-  celery:
-    image: buho/scraper
-    build:
-      context: .
-    environment:
-      FLASK_APP: app
-      LC_ALL: 'C.UTF-8'
-      LANG: 'C.UTF-8'
-      C_FORCE_ROOT: 1
-      DOCKER: 1
-    volumes:
-      - .:/prototipo-scrapper
-    command: celery -A app.celery worker --loglevel=info
-    networks:
-      - default
-      - nginx_proxy
-    depends_on:
-      - redis
-
-  redis:
-    image: "redis:latest"
-    ports:
-      - "6379:6379"
-    networks:
-      - default
-      - nginx_proxy
-
   Scraper:
     image: buho/scraper
     command: 'gunicorn -w 4 -b 0.0.0.0:5050 app:app'
     volumes:
       - .:/prototipo-scrapper
     environment:
-      VIRTUAL_HOST: 'pruebas-scraper.buho.media'
+      VIRTUAL_HOST: 'prototipo-scraper.buho.media'
       C_FORCE_ROOT: 1
       LC_ALL: 'C.UTF-8'
       LANG: 'C.UTF-8'
       TZ: 'America/Bogota'
       VIRTUAL_PORT: '5050'
-      LETSENCRYPT_HOST: 'pruebas-scraper.buho.media'
-      LETSENCRYPT_EMAIL: 'sistemas@buho.media'
+      LETSENCRYPT_HOST: 'prototipo-scraper.buho.media'
+      LETSENCRYPT_EMAIL: 'sistemas.buho@gnilat.com'
     networks:
       - default
       - nginx_proxy
-    depends_on:
-      - celery
 
 networks:
   default:

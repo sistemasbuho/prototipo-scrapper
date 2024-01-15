@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-MAINTAINER buho_team "sistemas@buho.media"
+MAINTAINER buho_team "sistemas.buho@gnilat.com"
 
 ENV LAST_UPDATED 2023-10-17
 
