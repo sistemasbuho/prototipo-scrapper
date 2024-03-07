@@ -46,7 +46,7 @@ def generador_excel(lista_scraper: list, column_mapping: dict, order_list: list)
             
     # Colorear las filas donde el contenido es None o vacío de rojo
     red_fill = PatternFill(start_color='FFFF0000',end_color='FFFF0000',fill_type='solid')
-    orange_fill = PatternFill(start_color='#FF943B',end_color='#FF943B',fill_type='solid')
+    orange_fill = PatternFill(start_color='FFFFA500',end_color='FFFFA500',fill_type='solid')
     for row in range(2, len(lista_scraper) + 2):
         content_value = sheet.cell(row=row, column=columnas.index("Contenido") + 1).value
         if len(content_value) < 1000:
