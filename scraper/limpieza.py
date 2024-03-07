@@ -1,4 +1,6 @@
 import re
+from io import StringIO
+import pandas as pd
 
 def unir_descripcion_content(response:dict):
     response["content"] = f"{response['og_description']}\n{response['content']}"
@@ -18,19 +20,28 @@ def limpieza(response):
     del response["twitter_title"]
     del response["twitter_description"]
     del response["twitter_card"]
-    del response["title"]
+    # del response["title"]# <- este
     del response["excerpt"]
-    del response["date"]
+    # del response["date"] # <- este
     del response["author"]
     del response["language"]
     del response["og_title"]
 
     # Esto es para quitar los saltos de línea necesarios
-    response["content"] = re.sub(r'[^\w\s]', '', response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ')).replace(' NEW_PARAGRAPH ', '\n')
+    # response["content"] = re.sub(r'[^\w\s]', '', response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ')).replace(' NEW_PARAGRAPH ', '\n')
+    response["content"] = response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ').replace(' NEW_PARAGRAPH ', '\n')
+    
+    # Exprecion regular para quitar los pipelines
+    response["content"] = re.sub(r'\|+', '', response["content"])
     
     # Eliminar el espacio sin rompimiento (U+00A0)
     response["content"] = response["content"].replace('\u00A0', ' ')
     
     # Une la cuadrilla de la nota con el contenido principal
     response = unir_descripcion_content(response)
+    
+    ### Agregados para mapeo de columnas
+    response["id"]=""
+    response["Keyword"]=""
+    response["Ubicación"]=""
     return response

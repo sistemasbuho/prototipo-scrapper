@@ -3,13 +3,23 @@ import threading
 from scraper.txtify import txtfly
 from .excel import generador_excel
 
+column_mapping = {
+    "id": "id",#
+    "Titular": "title",
+    "Contenido": "content",
+    "Link": "url",
+    "Keyword": "Keyword",#
+    "Fecha": "date",
+    "Ubicación": "Ubicación",
+    "Medio": "domain",
+}
+
 def scrape_and_append(urls, result_list:list):
     for url in urls:
         result_list.append(txtfly(url))
 
 
 def scrape_task(urls: list) -> list:
-    print("----Entro----")
     lista_scraper = []
 
     cantidad_urls = len(urls)
@@ -32,9 +42,7 @@ def scrape_task(urls: list) -> list:
 
     threads = []
 
-    print(url_batches)
     for url_batch in url_batches:
-        print("Entro al for")
         thread = threading.Thread(target=scrape_and_append, args=(url_batch, lista_scraper))
         threads.append(thread)
         thread.start()
@@ -43,5 +51,4 @@ def scrape_task(urls: list) -> list:
     for thread in threads:
         thread.join()
 
-    print("---sale---")
-    return generador_excel(lista_scraper)
+    return generador_excel(lista_scraper, column_mapping, urls)
