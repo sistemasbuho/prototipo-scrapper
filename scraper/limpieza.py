@@ -23,7 +23,7 @@ def limpieza(response):
     # del response["title"]# <- este
     del response["excerpt"]
     # del response["date"] # <- este
-    del response["author"]
+    # del response["author"]
     del response["language"]
     del response["og_title"]
 

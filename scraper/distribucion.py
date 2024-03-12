@@ -12,6 +12,7 @@ column_mapping = {
     "Fecha": "date",
     "Ubicación": "Ubicación",
     "Medio": "domain",
+    "author": "author",
 }
 
 def scrape_and_append(urls, result_list:list):

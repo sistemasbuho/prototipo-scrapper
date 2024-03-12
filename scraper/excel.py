@@ -49,7 +49,8 @@ def generador_excel(lista_scraper: list, column_mapping: dict, order_list: list)
     orange_fill = PatternFill(start_color='FFFFA500',end_color='FFFFA500',fill_type='solid')
     for row in range(2, len(lista_scraper) + 2):
         content_value = sheet.cell(row=row, column=columnas.index("Contenido") + 1).value
-        if len(content_value) < 1000:
+        author_value = sheet.cell(row=row, column=columnas.index("author") + 1).value
+        if len(content_value) < 1000 or (author_value is None or author_value == '' or author_value=="None\n"):
             for col in range(1, len(columnas) + 1):
                 sheet.cell(row=row, column=col).fill = orange_fill
         if content_value is None or content_value == '' or content_value=="None\n" or content_value=="Invalid URL" or len(content_value) < 100:
