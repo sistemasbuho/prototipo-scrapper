@@ -32,12 +32,13 @@ def limpieza(response):
     # Une la cuadrilla de la nota con el contenido principal
     response = unir_descripcion_content(response)
     
-    # Exprecion regular para quitar los pipelines
-    response["content"] = re.sub(r'\|+', '', response["content"])
-    response["content"] = response["content"].replace('|', '')
-    
-    # Eliminar el espacio sin rompimiento (U+00A0)
-    response["content"] = response["content"].replace('\u00A0', ' ')
+    for key in list(response.keys()):
+        if response[key] is not None and not key == 'url':
+            ### Exprecion regular para quitar los pipelines
+            response[key] = re.sub(r'\|+', '', response[key])
+            response[key] = response[key].replace('|', '')
+            ### Eliminar el espacio sin rompimiento (U+00A0)
+            response[key] = response[key].replace('\u00A0', ' ')
     
     # Esto es para quitar los saltos de línea necesarios
     response["content"] = response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ').replace(' NEW_PARAGRAPH ', '\n')
