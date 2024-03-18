@@ -27,19 +27,20 @@ def limpieza(response):
     del response["language"]
     del response["og_title"]
 
-    # Esto es para quitar los saltos de línea necesarios
     # response["content"] = re.sub(r'[^\w\s]', '', response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ')).replace(' NEW_PARAGRAPH ', '\n')
-    response["content"] = response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ').replace(' NEW_PARAGRAPH ', '\n')
+    
+    # Une la cuadrilla de la nota con el contenido principal
+    response = unir_descripcion_content(response)
     
     # Exprecion regular para quitar los pipelines
     response["content"] = re.sub(r'\|+', '', response["content"])
-    response["content"] = response["content"].replace('|', '')
+    response["content"] = "content".replace('|', '')
     
     # Eliminar el espacio sin rompimiento (U+00A0)
     response["content"] = response["content"].replace('\u00A0', ' ')
     
-    # Une la cuadrilla de la nota con el contenido principal
-    response = unir_descripcion_content(response)
+    # Esto es para quitar los saltos de línea necesarios
+    response["content"] = response["content"].replace('\n\n', ' NEW_PARAGRAPH ').replace('\n', ' ').replace(' NEW_PARAGRAPH ', '\n')
     
     ### Agregados para mapeo de columnas
     response["id"]=""
