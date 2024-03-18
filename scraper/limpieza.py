@@ -33,6 +33,7 @@ def limpieza(response):
     
     # Exprecion regular para quitar los pipelines
     response["content"] = re.sub(r'\|+', '', response["content"])
+    response["content"] = response["content"].replace('|', '')
     
     # Eliminar el espacio sin rompimiento (U+00A0)
     response["content"] = response["content"].replace('\u00A0', ' ')
